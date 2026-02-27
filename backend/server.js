@@ -3,24 +3,41 @@ import authRoutes from "./routes/authRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import dotenv from "dotenv";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import connectDB from "./config/db.js";
-
+import { verifyMail } from "./config/mail.js";
 dotenv.config();
 connectDB();
+verifyMail();
+
 
 const app = express();
 
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 
 //Routes
 
 app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
 
-//Global Error Handling Middleware
+
+
+app.get("/", (req, res) => {
+  res.send("API is running");
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ message: "Route not found" });
+});
+
+// Global error handler (always JSON)
 app.use((err, req, res, next) => {
-  res.status(err.status || 500).json({ message: err.message });
+  const status = err?.status || 500;
+  const message = err?.message || "Internal Server Error";
+  res.status(status).json({ message });
 });
 
 const PORT = process.env.PORT || 5000;
